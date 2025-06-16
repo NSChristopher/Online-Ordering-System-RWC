@@ -1,13 +1,12 @@
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
+const db = require("../db");
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Business Info Routes
 router.get("/business", async (req, res) => {
   try {
-    const businessInfo = await prisma.businessInfo.findFirst();
+    const businessInfo = db.businessInfo.findFirst();
     res.json(businessInfo);
   } catch (error) {
     console.error("Error fetching business info:", error);
@@ -20,7 +19,7 @@ router.put("/business/:id", async (req, res) => {
     const { id } = req.params;
     const { name, address, phone, hours, logoUrl } = req.body;
     
-    const businessInfo = await prisma.businessInfo.update({
+    const businessInfo = db.businessInfo.update({
       where: { id: parseInt(id) },
       data: { name, address, phone, hours, logoUrl }
     });
@@ -35,7 +34,7 @@ router.put("/business/:id", async (req, res) => {
 // Menu Categories Routes
 router.get("/categories", async (req, res) => {
   try {
-    const categories = await prisma.menuCategory.findMany({
+    const categories = db.menuCategory.findMany({
       orderBy: { sortOrder: 'asc' }
     });
     res.json(categories);
@@ -49,7 +48,7 @@ router.post("/categories", async (req, res) => {
   try {
     const { name, sortOrder } = req.body;
     
-    const category = await prisma.menuCategory.create({
+    const category = db.menuCategory.create({
       data: { name, sortOrder }
     });
     
@@ -65,7 +64,7 @@ router.put("/categories/:id", async (req, res) => {
     const { id } = req.params;
     const { name, sortOrder } = req.body;
     
-    const category = await prisma.menuCategory.update({
+    const category = db.menuCategory.update({
       where: { id: parseInt(id) },
       data: { name, sortOrder }
     });
@@ -81,7 +80,7 @@ router.delete("/categories/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
-    await prisma.menuCategory.delete({
+    db.menuCategory.delete({
       where: { id: parseInt(id) }
     });
     
@@ -95,7 +94,7 @@ router.delete("/categories/:id", async (req, res) => {
 // Menu Items Routes
 router.get("/items", async (req, res) => {
   try {
-    const items = await prisma.menuItem.findMany({
+    const items = db.menuItem.findMany({
       include: { menuCategory: true },
       orderBy: [
         { menuCategoryId: 'asc' },
@@ -113,7 +112,7 @@ router.post("/items", async (req, res) => {
   try {
     const { menuCategoryId, name, description, price, imageUrl, visible, sortOrder } = req.body;
     
-    const item = await prisma.menuItem.create({
+    const item = db.menuItem.create({
       data: {
         menuCategoryId,
         name,
@@ -138,7 +137,7 @@ router.put("/items/:id", async (req, res) => {
     const { id } = req.params;
     const { menuCategoryId, name, description, price, imageUrl, visible, sortOrder } = req.body;
     
-    const item = await prisma.menuItem.update({
+    const item = db.menuItem.update({
       where: { id: parseInt(id) },
       data: {
         menuCategoryId,
@@ -163,7 +162,7 @@ router.delete("/items/:id", async (req, res) => {
   try {
     const { id } = req.params;
     
-    await prisma.menuItem.delete({
+    db.menuItem.delete({
       where: { id: parseInt(id) }
     });
     
