@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import WorkerDashboard from './pages/WorkerDashboard';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -73,6 +74,10 @@ function App() {
                   <Dashboard />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/worker" 
+              element={<WorkerDashboard />}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

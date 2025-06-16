@@ -26,6 +26,41 @@ db.exec(`
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (authorId) REFERENCES User(id)
   );
+
+  CREATE TABLE IF NOT EXISTS MenuItem (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    price REAL NOT NULL,
+    category TEXT NOT NULL,
+    available INTEGER DEFAULT 1,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "Order" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customerName TEXT NOT NULL,
+    customerPhone TEXT,
+    status TEXT DEFAULT 'pending',
+    totalAmount REAL NOT NULL,
+    notes TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS OrderItem (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    orderId INTEGER NOT NULL,
+    menuItemId INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    price REAL NOT NULL,
+    notes TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (orderId) REFERENCES "Order"(id) ON DELETE CASCADE,
+    FOREIGN KEY (menuItemId) REFERENCES MenuItem(id)
+  );
 `);
 
 // Simple ORM-like interface
@@ -69,6 +104,57 @@ const updatePost = db.prepare(`
 
 const deletePost = db.prepare(`
   DELETE FROM Post WHERE id = ?
+`);
+
+// Order operations
+const createOrder = db.prepare(`
+  INSERT INTO "Order" (customerName, customerPhone, status, totalAmount, notes) 
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+const findAllOrders = db.prepare(`
+  SELECT * FROM "Order" ORDER BY createdAt DESC
+`);
+
+const findOrderById = db.prepare(`
+  SELECT * FROM "Order" WHERE id = ?
+`);
+
+const updateOrderStatus = db.prepare(`
+  UPDATE "Order" 
+  SET status = ?, updatedAt = CURRENT_TIMESTAMP 
+  WHERE id = ?
+`);
+
+const findOrdersByStatus = db.prepare(`
+  SELECT * FROM "Order" WHERE status = ? ORDER BY createdAt DESC
+`);
+
+// OrderItem operations
+const createOrderItem = db.prepare(`
+  INSERT INTO OrderItem (orderId, menuItemId, quantity, price, notes) 
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+const findOrderItemsByOrderId = db.prepare(`
+  SELECT oi.*, m.name as menuItemName, m.description as menuItemDescription 
+  FROM OrderItem oi 
+  JOIN MenuItem m ON oi.menuItemId = m.id 
+  WHERE oi.orderId = ?
+`);
+
+// MenuItem operations
+const createMenuItem = db.prepare(`
+  INSERT INTO MenuItem (name, description, price, category, available) 
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+const findAllMenuItems = db.prepare(`
+  SELECT * FROM MenuItem WHERE available = 1 ORDER BY category, name
+`);
+
+const findMenuItemById = db.prepare(`
+  SELECT * FROM MenuItem WHERE id = ?
 `);
 
 module.exports = {
@@ -180,6 +266,107 @@ module.exports = {
     delete: ({ where }) => {
       deletePost.run(where.id);
       return {};
+    }
+  },
+  order: {
+    create: ({ data }) => {
+      const result = createOrder.run(
+        data.customerName, 
+        data.customerPhone, 
+        data.status || 'pending', 
+        data.totalAmount, 
+        data.notes
+      );
+      const orderId = result.lastInsertRowid;
+      
+      // Create order items if provided
+      if (data.orderItems) {
+        for (const item of data.orderItems) {
+          createOrderItem.run(orderId, item.menuItemId, item.quantity, item.price, item.notes);
+        }
+      }
+      
+      return module.exports.order.findUnique({ where: { id: orderId }, include: { orderItems: true } });
+    },
+    findMany: ({ where, include, orderBy } = {}) => {
+      let orders;
+      if (where?.status) {
+        orders = findOrdersByStatus.all(where.status);
+      } else {
+        orders = findAllOrders.all();
+      }
+      
+      return orders.map(order => {
+        const result = {
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          status: order.status,
+          totalAmount: order.totalAmount,
+          notes: order.notes,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt
+        };
+        
+        if (include?.orderItems) {
+          result.orderItems = findOrderItemsByOrderId.all(order.id);
+        }
+        
+        return result;
+      });
+    },
+    findUnique: ({ where, include }) => {
+      const order = findOrderById.get(where.id);
+      if (!order) return null;
+      
+      const result = {
+        id: order.id,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        status: order.status,
+        totalAmount: order.totalAmount,
+        notes: order.notes,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt
+      };
+      
+      if (include?.orderItems) {
+        result.orderItems = findOrderItemsByOrderId.all(order.id);
+      }
+      
+      return result;
+    },
+    update: ({ where, data }) => {
+      if (data.status) {
+        updateOrderStatus.run(data.status, where.id);
+      }
+      return module.exports.order.findUnique({ where, include: { orderItems: true } });
+    }
+  },
+  menuItem: {
+    create: ({ data }) => {
+      const result = createMenuItem.run(
+        data.name, 
+        data.description, 
+        data.price, 
+        data.category, 
+        data.available !== false ? 1 : 0
+      );
+      return { id: result.lastInsertRowid, ...data };
+    },
+    findMany: () => {
+      return findAllMenuItems.all().map(item => ({
+        ...item,
+        available: Boolean(item.available)
+      }));
+    },
+    findUnique: ({ where }) => {
+      const item = findMenuItemById.get(where.id);
+      if (!item) return null;
+      return {
+        ...item,
+        available: Boolean(item.available)
+      };
     }
   },
   $disconnect: () => {

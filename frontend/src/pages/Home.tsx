@@ -48,6 +48,11 @@ const Home = () => {
                 Login
               </Button>
             </Link>
+            <Link to="/worker">
+              <Button variant="secondary" size="lg">
+                Worker Dashboard
+              </Button>
+            </Link>
           </div>
         </div>
 
