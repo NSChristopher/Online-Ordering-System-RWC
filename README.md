@@ -239,9 +239,27 @@ npx prisma migrate dev # Create migration
 
 ### Styling and Theming
 
-- Modify `frontend/tailwind.config.js` for theme customization
-- Update CSS variables in `frontend/src/index.css`
-- Customize ShadCN components in `frontend/src/components/ui/`
+- Modify `apps/customer-frontend/tailwind.config.js` for theme customization
+- Update CSS variables in `apps/customer-frontend/src/index.css`
+- Customize ShadCN components in `apps/customer-frontend/src/components/ui/`
+
+### Database Schema
+
+The database schema has been updated to support an online ordering system with the following entities:
+
+- **BusinessInfo**: Restaurant information (name, address, hours, logo)
+- **MenuCategory**: Menu organization (appetizers, entrees, etc.)
+- **MenuItem**: Individual menu items with pricing and descriptions
+- **Order**: Customer orders with contact info and delivery details
+- **OrderItem**: Line items for each order with historical pricing
+
+The schema is defined in `backend/prisma/schema.prisma` and aligns with the planning documentation in [`external-docs/planning/database-schema.md`](external-docs/planning/database-schema.md).
+
+**Key Features:**
+- No authentication required (guest ordering)
+- Single business support
+- Historical pricing preservation
+- Support for both delivery and to-go orders
 
 ### Environment Configuration
 
@@ -260,8 +278,8 @@ DATABASE_URL="file:./dev.db"
 
 ### Frontend (Vercel, Netlify, etc.)
 
-1. Build the frontend: `cd frontend && npm run build`
-2. Deploy the `frontend/dist` folder
+1. Build the customer frontend: `cd apps/customer-frontend && npm run build`
+2. Deploy the `apps/customer-frontend/dist` folder
 3. Configure environment variables for API URL
 
 ### Backend (Railway, Heroku, etc.)
