@@ -5,6 +5,9 @@ import Menu from './pages/Menu';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderStatus from './pages/OrderStatus';
+import OrderHistory from './pages/OrderHistory';
+import OrderDetails from './pages/OrderDetails';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -16,6 +19,9 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-status/:orderId" element={<OrderStatus />} />
+            <Route path="/order-history" element={<OrderHistory />} />
+            <Route path="/order-details/:orderId" element={<OrderDetails />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster position="top-right" />
