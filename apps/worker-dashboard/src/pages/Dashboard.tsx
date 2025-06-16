@@ -181,7 +181,8 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          /* Optimized for tablet: larger cards, better spacing, max 3 columns */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {filteredOrders.map((order) => (
               <OrderCard
                 key={order.id}

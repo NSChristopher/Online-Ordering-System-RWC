@@ -57,22 +57,22 @@ const OrderCard: React.FC<OrderCardProps> = ({
     switch (order.status) {
       case 'new':
         return (
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button
               onClick={() => onAccept(order.id)}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-              size="sm"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 text-base font-semibold"
+              size="lg"
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
+              <CheckCircle className="w-5 h-5 mr-2" />
               Accept
             </Button>
             <Button
               onClick={() => onReject(order.id)}
               variant="destructive"
-              className="flex-1"
-              size="sm"
+              className="flex-1 py-3 text-base font-semibold"
+              size="lg"
             >
-              <XCircle className="w-4 h-4 mr-2" />
+              <XCircle className="w-5 h-5 mr-2" />
               Reject
             </Button>
           </div>
@@ -81,10 +81,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
         return (
           <Button
             onClick={() => onMarkPreparing(order.id)}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-            size="sm"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 text-base font-semibold"
+            size="lg"
           >
-            <ChefHat className="w-4 h-4 mr-2" />
+            <ChefHat className="w-5 h-5 mr-2" />
             Start Preparing
           </Button>
         );
@@ -92,10 +92,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
         return (
           <Button
             onClick={() => onMarkReady(order.id)}
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
-            size="sm"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-semibold"
+            size="lg"
           >
-            <Package className="w-4 h-4 mr-2" />
+            <Package className="w-5 h-5 mr-2" />
             Mark Ready
           </Button>
         );
@@ -105,11 +105,11 @@ const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto mb-4 shadow-lg hover:shadow-xl transition-shadow">
+    <Card className="w-full max-w-sm mx-auto mb-4 shadow-lg hover:shadow-xl transition-shadow border-2 hover:border-blue-200">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-bold">
+            <CardTitle className="text-xl font-bold">
               Order #{order.id}
             </CardTitle>
             <div className="flex items-center text-sm text-gray-600 mt-1">
@@ -117,7 +117,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
               {getTimeAgo(order.createdAt)}
             </div>
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
+          <div className={`px-4 py-2 rounded-full text-sm font-bold border-2 ${getStatusColor(order.status)}`}>
             {order.status.toUpperCase()}
           </div>
         </div>
