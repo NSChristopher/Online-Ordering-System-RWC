@@ -59,6 +59,32 @@ db.exec(`
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS OrderTable (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customerName TEXT NOT NULL,
+    customerPhone TEXT NOT NULL,
+    customerEmail TEXT,
+    deliveryAddress TEXT,
+    orderType TEXT NOT NULL,
+    total REAL NOT NULL,
+    status TEXT DEFAULT 'new',
+    paymentMethod TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS OrderItem (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    orderId INTEGER NOT NULL,
+    menuItemId INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    priceAtOrder REAL NOT NULL,
+    itemNameAtOrder TEXT NOT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (orderId) REFERENCES OrderTable(id),
+    FOREIGN KEY (menuItemId) REFERENCES MenuItem(id)
+  );
 `);
 
 // Simple ORM-like interface
@@ -178,6 +204,51 @@ const updateBusinessInfo = db.prepare(`
   UPDATE BusinessInfo 
   SET name = ?, address = ?, phone = ?, hours = ?, logoUrl = ?, updatedAt = CURRENT_TIMESTAMP 
   WHERE id = ?
+`);
+
+// Order prepared statements
+const createOrder = db.prepare(`
+  INSERT INTO OrderTable (customerName, customerPhone, customerEmail, deliveryAddress, orderType, total, status, paymentMethod) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const findAllOrders = db.prepare(`
+  SELECT * FROM OrderTable ORDER BY createdAt DESC
+`);
+
+const findOrderById = db.prepare(`
+  SELECT * FROM OrderTable WHERE id = ?
+`);
+
+const updateOrderStatus = db.prepare(`
+  UPDATE OrderTable 
+  SET status = ?, updatedAt = CURRENT_TIMESTAMP 
+  WHERE id = ?
+`);
+
+const deleteOrder = db.prepare(`
+  DELETE FROM OrderTable WHERE id = ?
+`);
+
+// Order Item prepared statements
+const createOrderItem = db.prepare(`
+  INSERT INTO OrderItem (orderId, menuItemId, quantity, priceAtOrder, itemNameAtOrder) 
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+const findOrderItemsByOrderId = db.prepare(`
+  SELECT oi.*, mi.name as currentMenuItemName, mi.price as currentPrice
+  FROM OrderItem oi
+  LEFT JOIN MenuItem mi ON oi.menuItemId = mi.id
+  WHERE oi.orderId = ?
+`);
+
+const findAllOrderItems = db.prepare(`
+  SELECT oi.*, o.customerName, mi.name as currentMenuItemName
+  FROM OrderItem oi
+  JOIN OrderTable o ON oi.orderId = o.id
+  LEFT JOIN MenuItem mi ON oi.menuItemId = mi.id
+  ORDER BY oi.orderId DESC, oi.id ASC
 `);
 
 // Initialize seed data after all prepared statements are defined
@@ -486,6 +557,97 @@ module.exports = {
         createdAt: current.createdAt,
         updatedAt: new Date().toISOString()
       };
+    }
+  },
+  order: {
+    create: ({ data }) => {
+      const result = createOrder.run(
+        data.customerName,
+        data.customerPhone,
+        data.customerEmail || null,
+        data.deliveryAddress || null,
+        data.orderType,
+        data.total,
+        data.status || 'new',
+        data.paymentMethod || null
+      );
+      return {
+        id: result.lastInsertRowid,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone,
+        customerEmail: data.customerEmail || null,
+        deliveryAddress: data.deliveryAddress || null,
+        orderType: data.orderType,
+        total: data.total,
+        status: data.status || 'new',
+        paymentMethod: data.paymentMethod || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    },
+    findMany: ({ orderBy, include } = {}) => {
+      const orders = findAllOrders.all();
+      if (include?.orderItems) {
+        return orders.map(order => ({
+          ...order,
+          orderItems: findOrderItemsByOrderId.all(order.id)
+        }));
+      }
+      return orders;
+    },
+    findUnique: ({ where, include } = {}) => {
+      if (where.id) {
+        const order = findOrderById.get(where.id);
+        if (order && include?.orderItems) {
+          order.orderItems = findOrderItemsByOrderId.all(order.id);
+        }
+        return order;
+      }
+      return null;
+    },
+    update: ({ where, data }) => {
+      const current = findOrderById.get(where.id);
+      if (!current) return null;
+      
+      if (data.status) {
+        updateOrderStatus.run(data.status, where.id);
+      }
+      
+      return {
+        ...current,
+        status: data.status || current.status,
+        updatedAt: new Date().toISOString()
+      };
+    },
+    delete: ({ where }) => {
+      deleteOrder.run(where.id);
+      return {};
+    }
+  },
+  orderItem: {
+    create: ({ data }) => {
+      const result = createOrderItem.run(
+        data.orderId,
+        data.menuItemId,
+        data.quantity,
+        data.priceAtOrder,
+        data.itemNameAtOrder
+      );
+      return {
+        id: result.lastInsertRowid,
+        orderId: data.orderId,
+        menuItemId: data.menuItemId,
+        quantity: data.quantity,
+        priceAtOrder: data.priceAtOrder,
+        itemNameAtOrder: data.itemNameAtOrder,
+        createdAt: new Date().toISOString()
+      };
+    },
+    findMany: ({ where } = {}) => {
+      if (where?.orderId) {
+        return findOrderItemsByOrderId.all(where.orderId);
+      }
+      return findAllOrderItems.all();
     }
   },
   $disconnect: () => {

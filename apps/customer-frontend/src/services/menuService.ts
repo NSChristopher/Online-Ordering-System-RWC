@@ -1,6 +1,8 @@
 // Mock data service for menu items and business info
 // Based on backend/prisma/seed.js data structure
 
+const API_BASE_URL = 'http://localhost:5000/api';
+
 export interface BusinessInfo {
   id: number;
   name: string;
@@ -219,25 +221,70 @@ export const getMenuItemsByCategory = async (categoryId: number): Promise<MenuIt
 };
 
 export const submitOrder = async (order: Order): Promise<{ id: number; status: string }> => {
-  // Mock order submission
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const orderId = Math.floor(Math.random() * 10000) + 1000;
-  
-  // Log order for debugging (in real app, this would send to API)
-  console.log('Submitting order:', order);
-  
-  return {
-    id: orderId,
-    status: 'new'
-  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(order),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to submit order');
+    }
+
+    const result = await response.json();
+    return {
+      id: result.id,
+      status: result.status
+    };
+  } catch (error) {
+    console.error('Error submitting order:', error);
+    throw error;
+  }
 };
 
 export const getOrderStatus = async (orderId: number): Promise<{ id: number; status: string; estimatedTime?: number }> => {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  // Mock status progression
-  return {
-    id: orderId,
-    status: 'accepted',
-    estimatedTime: 25 // minutes
-  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to get order status');
+    }
+
+    const result = await response.json();
+    return {
+      id: result.id,
+      status: result.status,
+      estimatedTime: result.estimatedTime
+    };
+  } catch (error) {
+    console.error('Error getting order status:', error);
+    throw error;
+  }
+};
+
+export const cancelOrder = async (orderId: number): Promise<{ id: number; status: string }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to cancel order');
+    }
+
+    const result = await response.json();
+    return {
+      id: result.id,
+      status: result.status
+    };
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    throw error;
+  }
 };

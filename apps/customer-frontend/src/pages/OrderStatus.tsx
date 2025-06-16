@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, Truck, Package, AlertCircle, Phone } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { getOrderStatus } from '../services/menuService';
+import { getOrderStatus, cancelOrder } from '../services/menuService';
 import { toast } from 'sonner';
 
 interface OrderStatus {
@@ -134,8 +134,7 @@ const OrderStatusPage: React.FC = () => {
   const handleCancelOrder = async () => {
     setCancelling(true);
     try {
-      // Mock cancellation - in real app, this would call an API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await cancelOrder(parseInt(orderId!));
       
       setOrderStatus(prev => prev ? { ...prev, status: 'cancelled', canCancel: false } : null);
       toast.success('Order cancelled successfully');
