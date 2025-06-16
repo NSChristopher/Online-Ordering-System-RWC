@@ -70,6 +70,13 @@ A complete, production-ready full-stack template featuring React 18, Express.js,
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5000
 
+## 📚 Documentation & Planning
+
+- **Important planning and documentation files are located in the [`external-docs/`](external-docs/) folder.**  
+  This folder may be a submodule or a direct part of your repository, and contains key docs such as project planning, guidelines, and templates.
+- The documentation in `external-docs/` will auto-update at each rebuild or restart of the codespace if configured as a submodule.
+- For more details on managing external documentation, see the [Adding Documentation as a Submodule](#-adding-documentation-as-a-submodule) section below.
+
 ## 📚 Adding Documentation as a Submodule
 
 To add your own documentation as a submodule (recommended for multi-repo projects):
@@ -77,7 +84,7 @@ To add your own documentation as a submodule (recommended for multi-repo project
 1. **Add the submodule (excluding the `.devcontainer` folder):**
 
    ```sh
-   git submodule add --depth 1 --filter=blob:none --sparse https://github.com/your-org/your-docs-repo.git external-docs
+   git submodule add --depth 1 --filter=blob:none --sparse https://github.com/NSChristopher/Online-Ordering-System-RWC-DOCS.git external-docs
    cd external-docs
    git sparse-checkout set docs guidelines planning templates
    cd ..
@@ -140,6 +147,7 @@ To add your own documentation as a submodule (recommended for multi-repo project
 │   ├── package.json
 │   ├── tailwind.config.js    # Tailwind configuration
 │   └── vite.config.ts        # Vite configuration
+├── external-docs/             # External documentation and planning (important!)
 ├── agent/
 │   └── prompts.md            # AI agent instructions
 ├── package.json              # Root package.json
@@ -257,6 +265,7 @@ DATABASE_URL="file:./dev.db"
 
 ## 📚 Documentation
 
+- [external-docs/](external-docs/) — **Project planning, guidelines, and templates**
 - [React 18 Documentation](https://reactjs.org/docs/getting-started.html)
 - [Vite Documentation](https://vitejs.dev/guide/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
@@ -281,7 +290,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you have any questions or run into issues, please:
 
-1. Check the [documentation](agent/prompts.md)
+1. Check the [documentation](agent/prompts.md) and [`external-docs/`](external-docs/)
 2. Search existing issues
 3. Create a new issue with detailed information
 

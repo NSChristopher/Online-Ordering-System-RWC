@@ -1,0 +1,3 @@
+[submodule "external-docs"]
+	path = external-docs
+	url = https://github.com/NSChristopher/Online-Ordering-System-RWC-DOCS.git
