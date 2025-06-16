@@ -61,8 +61,9 @@ const Checkout = () => {
 
     try {
       // Mock order creation - in real app this would call an API
+      const orderId = Date.now(); // Generate a single timestamp for the order
       const order: Order = {
-        id: Date.now(), // Mock ID
+        id: orderId, // Use the stored timestamp
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         customerEmail: formData.customerEmail || undefined,
