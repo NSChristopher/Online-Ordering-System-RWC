@@ -26,6 +26,58 @@ db.exec(`
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (authorId) REFERENCES User(id)
   );
+
+  CREATE TABLE IF NOT EXISTS business_info (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    hours TEXT NOT NULL,
+    logoUrl TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS menu_category (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    sortOrder INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS menu_item (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    menuCategoryId INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    price REAL NOT NULL,
+    imageUrl TEXT,
+    visible INTEGER DEFAULT 1,
+    sortOrder INTEGER DEFAULT 0,
+    FOREIGN KEY (menuCategoryId) REFERENCES menu_category(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS "order" (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customerName TEXT NOT NULL,
+    customerPhone TEXT NOT NULL,
+    customerEmail TEXT,
+    deliveryAddress TEXT,
+    orderType TEXT NOT NULL,
+    total REAL NOT NULL,
+    status TEXT DEFAULT 'new',
+    paymentMethod TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS order_item (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    orderId INTEGER NOT NULL,
+    menuItemId INTEGER NOT NULL,
+    quantity INTEGER NOT NULL,
+    priceAtOrder REAL NOT NULL,
+    itemNameAtOrder TEXT NOT NULL,
+    FOREIGN KEY (orderId) REFERENCES "order"(id),
+    FOREIGN KEY (menuItemId) REFERENCES menu_item(id)
+  );
 `);
 
 // Simple ORM-like interface
@@ -69,6 +121,48 @@ const updatePost = db.prepare(`
 
 const deletePost = db.prepare(`
   DELETE FROM Post WHERE id = ?
+`);
+
+// Order system prepared statements
+const findAllOrders = db.prepare(`
+  SELECT * FROM "order" 
+  ORDER BY createdAt DESC
+`);
+
+const findOrderById = db.prepare(`
+  SELECT * FROM "order" WHERE id = ?
+`);
+
+const updateOrderStatus = db.prepare(`
+  UPDATE "order" 
+  SET status = ?, updatedAt = CURRENT_TIMESTAMP 
+  WHERE id = ?
+`);
+
+const findOrderItems = db.prepare(`
+  SELECT oi.*, mi.name as menuItemName
+  FROM order_item oi
+  JOIN menu_item mi ON oi.menuItemId = mi.id
+  WHERE oi.orderId = ?
+`);
+
+const createOrder = db.prepare(`
+  INSERT INTO "order" (customerName, customerPhone, customerEmail, deliveryAddress, orderType, total, status, paymentMethod) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+`);
+
+const createOrderItem = db.prepare(`
+  INSERT INTO order_item (orderId, menuItemId, quantity, priceAtOrder, itemNameAtOrder) 
+  VALUES (?, ?, ?, ?, ?)
+`);
+
+// Menu system prepared statements
+const findAllMenuCategories = db.prepare(`
+  SELECT * FROM menu_category ORDER BY sortOrder
+`);
+
+const findMenuItemsByCategory = db.prepare(`
+  SELECT * FROM menu_item WHERE menuCategoryId = ? AND visible = 1 ORDER BY sortOrder
 `);
 
 module.exports = {
@@ -180,6 +274,91 @@ module.exports = {
     delete: ({ where }) => {
       deletePost.run(where.id);
       return {};
+    }
+  },
+  order: {
+    findMany: ({ include, orderBy }) => {
+      const orders = findAllOrders.all();
+      return orders.map(order => ({
+        ...order,
+        total: parseFloat(order.total),
+        published: Boolean(order.published),
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        orderItems: include?.orderItems ? findOrderItems.all(order.id) : undefined
+      }));
+    },
+    findUnique: ({ where, include }) => {
+      const order = findOrderById.get(where.id);
+      if (!order) return null;
+      
+      return {
+        ...order,
+        total: parseFloat(order.total),
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        orderItems: include?.orderItems ? findOrderItems.all(order.id) : undefined
+      };
+    },
+    update: ({ where, data }) => {
+      if (data.status) {
+        updateOrderStatus.run(data.status, where.id);
+      }
+      return findOrderById.get(where.id);
+    },
+    create: ({ data }) => {
+      const result = createOrder.run(
+        data.customerName,
+        data.customerPhone,
+        data.customerEmail,
+        data.deliveryAddress,
+        data.orderType,
+        data.total,
+        data.status || 'new',
+        data.paymentMethod
+      );
+      return { id: result.lastInsertRowid, ...data };
+    }
+  },
+  orderItem: {
+    createMany: ({ data }) => {
+      const stmt = db.transaction((items) => {
+        for (const item of items) {
+          createOrderItem.run(
+            item.orderId,
+            item.menuItemId,
+            item.quantity,
+            item.priceAtOrder,
+            item.itemNameAtOrder
+          );
+        }
+      });
+      stmt(data);
+      return { count: data.length };
+    }
+  },
+  menuCategory: {
+    findMany: () => {
+      return findAllMenuCategories.all();
+    }
+  },
+  menuItem: {
+    findMany: ({ where }) => {
+      if (where?.menuCategoryId) {
+        return findMenuItemsByCategory.all(where.menuCategoryId);
+      }
+      return db.prepare('SELECT * FROM menu_item WHERE visible = 1 ORDER BY sortOrder').all();
+    },
+    findFirst: ({ where }) => {
+      if (where?.name) {
+        return db.prepare('SELECT * FROM menu_item WHERE name = ?').get(where.name);
+      }
+      return null;
+    }
+  },
+  businessInfo: {
+    findFirst: () => {
+      return db.prepare('SELECT * FROM business_info LIMIT 1').get();
     }
   },
   $disconnect: () => {
