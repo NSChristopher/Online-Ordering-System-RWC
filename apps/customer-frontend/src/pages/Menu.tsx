@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Minus, Phone, Clock, MapPin, User, Package } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Phone, Clock, MapPin, User, Package, Menu as MenuIcon, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -19,6 +19,7 @@ const Menu: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const { state: cartState, addItem, updateQuantity } = useCart();
 
@@ -108,10 +109,21 @@ const Menu: React.FC = () => {
                     Profile
                   </Button>
                 </Link>
+                
+                {/* Mobile menu button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="sm:hidden"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                  {mobileMenuOpen ? <X className="h-4 w-4" /> : <MenuIcon className="h-4 w-4" />}
+                </Button>
+                
                 <Link to="/cart">
                   <Button className="relative bg-orange-500 hover:bg-orange-600">
                     <ShoppingCart className="h-5 w-5 mr-2" />
-                    Cart
+                    <span className="hidden sm:inline">Cart</span>
                     {cartState.itemCount > 0 && (
                       <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">
                         {cartState.itemCount}
@@ -122,6 +134,44 @@ const Menu: React.FC = () => {
               </div>
             </div>
           </div>
+          
+          {/* Mobile menu */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden border-t bg-white">
+              <div className="px-2 pt-2 pb-3 space-y-1">
+                <Link 
+                  to="/order-history" 
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center">
+                    <Package className="h-5 w-5 mr-3" />
+                    Order History
+                  </div>
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center">
+                    <User className="h-5 w-5 mr-3" />
+                    Profile
+                  </div>
+                </Link>
+                <div className="px-3 py-2 text-sm text-gray-500 border-t">
+                  <div className="flex items-center mb-1">
+                    <Phone className="h-4 w-4 mr-2" />
+                    {businessInfo?.phone}
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Open Now
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
