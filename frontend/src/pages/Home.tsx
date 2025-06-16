@@ -48,6 +48,11 @@ const Home = () => {
                 Login
               </Button>
             </Link>
+            <Link to="/admin">
+              <Button variant="outline" size="lg" className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100">
+                Admin Portal
+              </Button>
+            </Link>
           </div>
         </div>
 
