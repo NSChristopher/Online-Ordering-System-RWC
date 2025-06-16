@@ -116,6 +116,34 @@ To add your own documentation as a submodule (recommended for multi-repo project
 ```
 ├── .devcontainer/             # GitHub Codespaces configuration
 │   └── devcontainer.json
+├── apps/                      # Monorepo apps structure
+│   ├── customer-frontend/     # Customer-facing React app
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   │   └── ui/       # ShadCN UI components
+│   │   │   ├── pages/
+│   │   │   │   ├── Home.tsx  # Landing page
+│   │   │   │   ├── Login.tsx # Login page
+│   │   │   │   ├── Register.tsx  # Registration page
+│   │   │   │   └── Dashboard.tsx # Protected dashboard
+│   │   │   ├── hooks/
+│   │   │   │   ├── useAuth.tsx   # Authentication hook
+│   │   │   │   └── usePosts.ts   # Posts management hook
+│   │   │   ├── lib/
+│   │   │   │   ├── api.ts        # Axios configuration
+│   │   │   │   └── utils.ts      # Utility functions
+│   │   │   ├── types/
+│   │   │   │   └── index.ts      # TypeScript definitions
+│   │   │   ├── App.tsx           # Main app component
+│   │   │   ├── main.tsx          # React entry point
+│   │   │   └── index.css         # Global styles
+│   │   ├── package.json
+│   │   ├── tailwind.config.js    # Tailwind configuration
+│   │   └── vite.config.ts        # Vite configuration
+│   ├── worker-dashboard/      # Worker tablet app (planned)
+│   │   └── README.md
+│   └── admin-portal/          # Admin web portal (planned)
+│       └── README.md
 ├── backend/                   # Express.js API
 │   ├── prisma/
 │   │   └── schema.prisma      # Database schema
@@ -124,29 +152,6 @@ To add your own documentation as a submodule (recommended for multi-repo project
 │   │   └── posts.js          # Posts CRUD routes
 │   ├── package.json
 │   └── index.js              # Express server
-├── frontend/                  # React application
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── ui/           # ShadCN UI components
-│   │   ├── pages/
-│   │   │   ├── Home.tsx      # Landing page
-│   │   │   ├── Login.tsx     # Login page
-│   │   │   ├── Register.tsx  # Registration page
-│   │   │   └── Dashboard.tsx # Protected dashboard
-│   │   ├── hooks/
-│   │   │   ├── useAuth.tsx   # Authentication hook
-│   │   │   └── usePosts.ts   # Posts management hook
-│   │   ├── lib/
-│   │   │   ├── api.ts        # Axios configuration
-│   │   │   └── utils.ts      # Utility functions
-│   │   ├── types/
-│   │   │   └── index.ts      # TypeScript definitions
-│   │   ├── App.tsx           # Main app component
-│   │   ├── main.tsx          # React entry point
-│   │   └── index.css         # Global styles
-│   ├── package.json
-│   ├── tailwind.config.js    # Tailwind configuration
-│   └── vite.config.ts        # Vite configuration
 ├── external-docs/             # External documentation and planning (important!)
 ├── agent/
 │   └── prompts.md            # AI agent instructions
@@ -178,17 +183,25 @@ To add your own documentation as a submodule (recommended for multi-repo project
 # Install all dependencies
 npm install
 
-# Start both frontend and backend
+# Start both customer frontend and backend
 npm run dev
 
 # Start backend only
 npm run backend:dev
 
-# Start frontend only
-npm run frontend:dev
+# Start individual apps
+npm run customer:dev      # Customer frontend (main app)
+npm run worker:dev        # Worker dashboard (planned)
+npm run admin:dev         # Admin portal (planned)
 
-# Build frontend
-npm run frontend:build
+# Build individual apps
+npm run customer:build    # Customer frontend
+npm run worker:build      # Worker dashboard (planned)
+npm run admin:build       # Admin portal (planned)
+
+# Legacy frontend commands (for compatibility)
+npm run frontend:dev      # Alias for customer:dev
+npm run frontend:build    # Alias for customer:build
 
 # Database operations
 cd backend
@@ -226,9 +239,27 @@ npx prisma migrate dev # Create migration
 
 ### Styling and Theming
 
-- Modify `frontend/tailwind.config.js` for theme customization
-- Update CSS variables in `frontend/src/index.css`
-- Customize ShadCN components in `frontend/src/components/ui/`
+- Modify `apps/customer-frontend/tailwind.config.js` for theme customization
+- Update CSS variables in `apps/customer-frontend/src/index.css`
+- Customize ShadCN components in `apps/customer-frontend/src/components/ui/`
+
+### Database Schema
+
+The database schema has been updated to support an online ordering system with the following entities:
+
+- **BusinessInfo**: Restaurant information (name, address, hours, logo)
+- **MenuCategory**: Menu organization (appetizers, entrees, etc.)
+- **MenuItem**: Individual menu items with pricing and descriptions
+- **Order**: Customer orders with contact info and delivery details
+- **OrderItem**: Line items for each order with historical pricing
+
+The schema is defined in `backend/prisma/schema.prisma` and aligns with the planning documentation in [`external-docs/planning/database-schema.md`](external-docs/planning/database-schema.md).
+
+**Key Features:**
+- No authentication required (guest ordering)
+- Single business support
+- Historical pricing preservation
+- Support for both delivery and to-go orders
 
 ### Environment Configuration
 
@@ -247,8 +278,8 @@ DATABASE_URL="file:./dev.db"
 
 ### Frontend (Vercel, Netlify, etc.)
 
-1. Build the frontend: `cd frontend && npm run build`
-2. Deploy the `frontend/dist` folder
+1. Build the customer frontend: `cd apps/customer-frontend && npm run build`
+2. Deploy the `apps/customer-frontend/dist` folder
 3. Configure environment variables for API URL
 
 ### Backend (Railway, Heroku, etc.)

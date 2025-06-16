@@ -20,7 +20,7 @@ fi
 echo "✅ npm version: $(npm --version)"
 
 # Install dependencies if not already installed
-if [ ! -d "backend/node_modules" ] || [ ! -d "frontend/node_modules" ]; then
+if [ ! -d "backend/node_modules" ] || [ ! -d "apps/customer-frontend/node_modules" ]; then
     echo "📦 Installing dependencies..."
     npm install
     if [ $? -ne 0 ]; then
@@ -32,16 +32,16 @@ fi
 echo "✅ Dependencies installed"
 
 # Build frontend to ensure everything works
-echo "🔨 Building frontend..."
-cd frontend
+echo "🔨 Building customer frontend..."
+cd apps/customer-frontend
 npm run build
 if [ $? -ne 0 ]; then
-    echo "❌ Frontend build failed"
+    echo "❌ Customer frontend build failed"
     exit 1
 fi
-cd ..
+cd ../..
 
-echo "✅ Frontend build successful"
+echo "✅ Customer frontend build successful"
 
 # Test backend startup
 echo "🧪 Testing backend startup..."
