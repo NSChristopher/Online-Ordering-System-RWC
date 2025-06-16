@@ -116,6 +116,34 @@ To add your own documentation as a submodule (recommended for multi-repo project
 ```
 ├── .devcontainer/             # GitHub Codespaces configuration
 │   └── devcontainer.json
+├── apps/                      # Monorepo apps structure
+│   ├── customer-frontend/     # Customer-facing React app
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   │   └── ui/       # ShadCN UI components
+│   │   │   ├── pages/
+│   │   │   │   ├── Home.tsx  # Landing page
+│   │   │   │   ├── Login.tsx # Login page
+│   │   │   │   ├── Register.tsx  # Registration page
+│   │   │   │   └── Dashboard.tsx # Protected dashboard
+│   │   │   ├── hooks/
+│   │   │   │   ├── useAuth.tsx   # Authentication hook
+│   │   │   │   └── usePosts.ts   # Posts management hook
+│   │   │   ├── lib/
+│   │   │   │   ├── api.ts        # Axios configuration
+│   │   │   │   └── utils.ts      # Utility functions
+│   │   │   ├── types/
+│   │   │   │   └── index.ts      # TypeScript definitions
+│   │   │   ├── App.tsx           # Main app component
+│   │   │   ├── main.tsx          # React entry point
+│   │   │   └── index.css         # Global styles
+│   │   ├── package.json
+│   │   ├── tailwind.config.js    # Tailwind configuration
+│   │   └── vite.config.ts        # Vite configuration
+│   ├── worker-dashboard/      # Worker tablet app (planned)
+│   │   └── README.md
+│   └── admin-portal/          # Admin web portal (planned)
+│       └── README.md
 ├── backend/                   # Express.js API
 │   ├── prisma/
 │   │   └── schema.prisma      # Database schema
@@ -124,29 +152,6 @@ To add your own documentation as a submodule (recommended for multi-repo project
 │   │   └── posts.js          # Posts CRUD routes
 │   ├── package.json
 │   └── index.js              # Express server
-├── frontend/                  # React application
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── ui/           # ShadCN UI components
-│   │   ├── pages/
-│   │   │   ├── Home.tsx      # Landing page
-│   │   │   ├── Login.tsx     # Login page
-│   │   │   ├── Register.tsx  # Registration page
-│   │   │   └── Dashboard.tsx # Protected dashboard
-│   │   ├── hooks/
-│   │   │   ├── useAuth.tsx   # Authentication hook
-│   │   │   └── usePosts.ts   # Posts management hook
-│   │   ├── lib/
-│   │   │   ├── api.ts        # Axios configuration
-│   │   │   └── utils.ts      # Utility functions
-│   │   ├── types/
-│   │   │   └── index.ts      # TypeScript definitions
-│   │   ├── App.tsx           # Main app component
-│   │   ├── main.tsx          # React entry point
-│   │   └── index.css         # Global styles
-│   ├── package.json
-│   ├── tailwind.config.js    # Tailwind configuration
-│   └── vite.config.ts        # Vite configuration
 ├── external-docs/             # External documentation and planning (important!)
 ├── agent/
 │   └── prompts.md            # AI agent instructions
@@ -178,17 +183,25 @@ To add your own documentation as a submodule (recommended for multi-repo project
 # Install all dependencies
 npm install
 
-# Start both frontend and backend
+# Start both customer frontend and backend
 npm run dev
 
 # Start backend only
 npm run backend:dev
 
-# Start frontend only
-npm run frontend:dev
+# Start individual apps
+npm run customer:dev      # Customer frontend (main app)
+npm run worker:dev        # Worker dashboard (planned)
+npm run admin:dev         # Admin portal (planned)
 
-# Build frontend
-npm run frontend:build
+# Build individual apps
+npm run customer:build    # Customer frontend
+npm run worker:build      # Worker dashboard (planned)
+npm run admin:build       # Admin portal (planned)
+
+# Legacy frontend commands (for compatibility)
+npm run frontend:dev      # Alias for customer:dev
+npm run frontend:build    # Alias for customer:build
 
 # Database operations
 cd backend

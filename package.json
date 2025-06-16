@@ -3,15 +3,23 @@
   "version": "1.0.0",
   "description": "A complete full-stack template with React, Express, and Prisma",
   "scripts": {
-    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "dev": "concurrently \"npm run backend:dev\" \"npm run customer:dev\"",
     "backend:dev": "cd backend && npm run dev",
-    "frontend:dev": "cd frontend && npm run dev",
+    "customer:dev": "cd apps/customer-frontend && npm run dev",
+    "worker:dev": "cd apps/worker-dashboard && npm run dev",
+    "admin:dev": "cd apps/admin-portal && npm run dev",
     "backend:install": "cd backend && npm install",
-    "frontend:install": "cd frontend && npm install",
-    "install": "npm run backend:install && npm run frontend:install",
-    "build": "npm run backend:build && npm run frontend:build",
+    "customer:install": "cd apps/customer-frontend && npm install",
+    "worker:install": "cd apps/worker-dashboard && npm install",
+    "admin:install": "cd apps/admin-portal && npm install",
+    "install": "npm run backend:install && npm run customer:install",
+    "build": "npm run backend:build && npm run customer:build",
     "backend:build": "cd backend && npm run build",
-    "frontend:build": "cd frontend && npm run build"
+    "customer:build": "cd apps/customer-frontend && npm run build",
+    "worker:build": "cd apps/worker-dashboard && npm run build",
+    "admin:build": "cd apps/admin-portal && npm run build",
+    "frontend:dev": "npm run customer:dev",
+    "frontend:build": "npm run customer:build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
