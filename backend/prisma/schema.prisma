@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Online Ordering System Database Schema
+// Based on planning docs: external-docs/planning/database-schema.md
 
 generator client {
   provider = "prisma-client-js"
@@ -10,23 +10,78 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+// Business information for the restaurant
+model BusinessInfo {
+  id       Int     @id @default(autoincrement())
+  name     String
+  address  String
+  phone    String
+  hours    String
+  logoUrl  String?
+
+  @@map("business_info")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Menu categories (e.g., Appetizers, Entrees, Desserts)
+model MenuCategory {
+  id        Int        @id @default(autoincrement())
+  name      String
+  sortOrder Int        @default(0)
+  menuItems MenuItem[]
+
+  @@map("menu_category")
+}
+
+// Individual menu items
+model MenuItem {
+  id             Int         @id @default(autoincrement())
+  menuCategoryId Int
+  name           String
+  description    String?
+  price          Float
+  imageUrl       String?
+  visible        Boolean     @default(true)
+  sortOrder      Int         @default(0)
+  
+  // Relations
+  menuCategory   MenuCategory @relation(fields: [menuCategoryId], references: [id])
+  orderItems     OrderItem[]
+
+  @@map("menu_item")
+}
+
+// Customer orders
+model Order {
+  id              Int         @id @default(autoincrement())
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  deliveryAddress String?
+  orderType       String      // "delivery" or "to-go"
+  total           Float
+  status          String      @default("new") // "new", "accepted", "rejected", "ready", etc.
+  paymentMethod   String?     // Stubbed for MVP
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  orderItems      OrderItem[]
+
+  @@map("order")
+}
+
+// Line items for each order
+model OrderItem {
+  id               Int      @id @default(autoincrement())
+  orderId          Int
+  menuItemId       Int
+  quantity         Int
+  priceAtOrder     Float    // Price at time of order for historical accuracy
+  itemNameAtOrder  String   // Item name at time of order for historical accuracy
+  
+  // Relations
+  order            Order    @relation(fields: [orderId], references: [id])
+  menuItem         MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_item")
 }
