@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { toast } from 'sonner';
 import { BusinessInfo, UpdateBusinessInfoData } from '@/types';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import api from '@/lib/api';
 
 export const useBusiness = () => {
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
@@ -12,7 +10,7 @@ export const useBusiness = () => {
   // Fetch business info
   const fetchBusinessInfo = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/business`);
+      const response = await api.get('/business');
       setBusinessInfo(response.data);
     } catch (error) {
       console.error('Error fetching business info:', error);
@@ -23,7 +21,7 @@ export const useBusiness = () => {
   // Update business info
   const updateBusinessInfo = async (data: UpdateBusinessInfoData) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/business`, data);
+      const response = await api.put('/business', data);
       setBusinessInfo(response.data);
       toast.success('Business information updated successfully');
       return response.data;
