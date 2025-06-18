@@ -157,3 +157,6 @@ prisma/migrations/dev.db*
 dist
 dist-ssr
 *.local
+
+# Test scripts
+test-integration.sh
