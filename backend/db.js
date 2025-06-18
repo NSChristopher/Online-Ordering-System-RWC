@@ -5,6 +5,33 @@ const path = require('path');
 // Simple SQLite database initialization
 const db = new Database(path.join(__dirname, 'prisma', 'dev.db'));
 
+// Function to verify and fix database schema
+function verifyAndFixSchema() {
+  try {
+    // Check if BusinessInfo table exists and has correct structure
+    const businessInfoSchema = db.prepare(`
+      SELECT sql FROM sqlite_master WHERE type='table' AND name='BusinessInfo'
+    `).get();
+    
+    if (businessInfoSchema) {
+      // Check if the table has the correct columns
+      const columns = db.prepare('PRAGMA table_info(BusinessInfo)').all();
+      const hasUpdatedAt = columns.some(col => col.name === 'updatedAt');
+      const hasCreatedAt = columns.some(col => col.name === 'createdAt');
+      
+      if (!hasUpdatedAt || !hasCreatedAt) {
+        console.log('BusinessInfo table missing timestamp columns, dropping and recreating...');
+        db.exec('DROP TABLE IF EXISTS BusinessInfo');
+      }
+    }
+  } catch (error) {
+    console.log('Error verifying schema, will recreate tables:', error.message);
+  }
+}
+
+// Verify schema before creating tables
+verifyAndFixSchema();
+
 // Create tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS User (
@@ -139,8 +166,8 @@ const findBusinessInfo = db.prepare(`
 `);
 
 const createBusinessInfo = db.prepare(`
-  INSERT INTO BusinessInfo (name, address, phone, hours, logoUrl) 
-  VALUES (?, ?, ?, ?, ?)
+  INSERT INTO BusinessInfo (name, address, phone, hours, logoUrl, createdAt, updatedAt) 
+  VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 `);
 
 const updateBusinessInfo = db.prepare(`
