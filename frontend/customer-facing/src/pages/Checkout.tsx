@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCart } from '@/hooks/useCart';
-import { Order } from '@/types';
+import { useOrders } from '@/hooks/useOrders';
 import { ArrowLeft, CreditCard, Banknote, Truck, Store } from 'lucide-react';
 
 const Checkout = () => {
   const { cart, clearCart } = useCart();
+  const { createOrder } = useOrders();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
@@ -60,32 +61,24 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // Mock order creation - in real app this would call an API
-      const orderId = Date.now(); // Generate a single timestamp for the order
-      const order: Order = {
-        id: orderId, // Use the stored timestamp
+      // Create order via API
+      const orderData = {
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         customerEmail: formData.customerEmail || undefined,
         deliveryAddress: cart.orderType === 'delivery' ? formData.deliveryAddress : undefined,
         orderType: cart.orderType,
-        total: cart.total,
-        status: 'new',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         paymentMethod: formData.paymentMethod,
         items: cart.items.map(item => ({
-          id: Date.now() + Math.random(), // Mock ID
-          orderId: Date.now(),
           menuItemId: item.menuItem.id,
           quantity: item.quantity,
-          priceAtOrder: item.menuItem.price,
-          itemNameAtOrder: item.menuItem.name
         }))
       };
 
-      // Store order in sessionStorage for order confirmation page
-      sessionStorage.setItem('currentOrder', JSON.stringify(order));
+      const order = await createOrder(orderData);
+      
+      // Store order ID in sessionStorage for order confirmation page
+      sessionStorage.setItem('currentOrderId', order.id.toString());
       
       // Clear cart and navigate to confirmation
       clearCart();

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Order, OrderStatus } from '@/types';
+import { useOrders } from '@/hooks/useOrders';
 import { 
   CheckCircle, 
   Clock, 
@@ -12,58 +13,53 @@ import {
   Store,
   ArrowLeft,
   Phone,
-  HelpCircle
+  HelpCircle,
+  Loader2
 } from 'lucide-react';
 
 const OrderStatusPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const { getOrderById } = useOrders();
   const [order, setOrder] = useState<Order | null>(null);
-  const [currentStatus, setCurrentStatus] = useState<OrderStatus>('new');
+  const [loading, setLoading] = useState(true);
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>('pending');
   const [estimatedTime, setEstimatedTime] = useState<string>('');
 
   useEffect(() => {
-    // Get order from sessionStorage (in real app, fetch from API)
-    const orderData = sessionStorage.getItem('currentOrder');
-    if (!orderData) {
+    if (!orderId) {
       navigate('/');
       return;
     }
 
-    const parsedOrder = JSON.parse(orderData) as Order;
-    if (parsedOrder.id.toString() !== orderId) {
-      navigate('/');
-      return;
-    }
-
-    setOrder(parsedOrder);
-    setCurrentStatus(parsedOrder.status);
-    
-    // Set estimated time based on order type and items
-    const itemCount = parsedOrder.items.reduce((sum, item) => sum + item.quantity, 0);
-    const baseTime = parsedOrder.orderType === 'delivery' ? 45 : 25;
-    const additionalTime = Math.max(0, (itemCount - 3) * 5);
-    setEstimatedTime(`${baseTime + additionalTime}-${baseTime + additionalTime + 10} minutes`);
-
-    // Mock status updates (in real app, this would be real-time updates)
-    const statusProgression: OrderStatus[] = ['accepted', 'preparing', 'ready'];
-    let currentIndex = 0;
-
-    const interval = setInterval(() => {
-      if (currentIndex < statusProgression.length && parsedOrder.status !== 'cancelled') {
-        setCurrentStatus(statusProgression[currentIndex]);
-        currentIndex++;
-      } else {
-        clearInterval(interval);
+    const fetchOrder = async () => {
+      try {
+        const fetchedOrder = await getOrderById(parseInt(orderId));
+        if (fetchedOrder) {
+          setOrder(fetchedOrder);
+          setCurrentStatus(fetchedOrder.status);
+          
+          // Set estimated time based on order type and items
+          const itemCount = fetchedOrder.items.reduce((sum, item) => sum + item.quantity, 0);
+          const baseTime = fetchedOrder.orderType === 'delivery' ? 45 : 25;
+          const additionalTime = Math.max(0, (itemCount - 3) * 5);
+          setEstimatedTime(`${baseTime + additionalTime}-${baseTime + additionalTime + 10} minutes`);
+        } else {
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        navigate('/');
+      } finally {
+        setLoading(false);
       }
-    }, 10000); // Update every 10 seconds for demo
+    };
 
-    return () => clearInterval(interval);
-  }, [orderId, navigate]);
+  }, [orderId, navigate, getOrderById]);
 
   const getStatusInfo = (status: OrderStatus) => {
     switch (status) {
-      case 'new':
+      case 'pending':
         return {
           title: 'Order Received',
           description: 'We\'ve received your order and are reviewing it.',
@@ -135,15 +131,35 @@ const OrderStatusPage = () => {
   const statusInfo = getStatusInfo(currentStatus);
   const StatusIcon = statusInfo.icon;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Loading order status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500">Order not found</p>
+        </div>
+      </div>
+    );
+  }
+
   const getProgressSteps = () => {
     const steps = [
-      { key: 'new', label: 'Received' },
+      { key: 'pending', label: 'Received' },
       { key: 'accepted', label: 'Confirmed' },
-      { key: 'preparing', label: 'Preparing' },
       { key: 'ready', label: order?.orderType === 'delivery' ? 'Delivering' : 'Ready' }
     ];
 
-    const statusOrder = ['new', 'accepted', 'preparing', 'ready', 'completed'];
+    const statusOrder = ['pending', 'accepted', 'ready', 'completed'];
     const currentIndex = statusOrder.indexOf(currentStatus);
 
     return steps.map((step, index) => ({
@@ -303,7 +319,7 @@ const OrderStatusPage = () => {
               <div className="border-t pt-2 mt-4">
                 <div className="flex justify-between items-center font-semibold">
                   <span>Total</span>
-                  <span>${order.total.toFixed(2)}</span>
+                  <span>${order.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>

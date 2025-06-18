@@ -3,27 +3,47 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Order } from '@/types';
-import { CheckCircle, Clock, Edit, X, Truck, Store } from 'lucide-react';
+import { useOrders } from '@/hooks/useOrders';
+import { CheckCircle, Clock, Edit, X, Truck, Store, Loader2 } from 'lucide-react';
 
 const GRACE_PERIOD_MINUTES = 5;
 
 const OrderConfirmation = () => {
   const navigate = useNavigate();
+  const { getOrderById, cancelOrder } = useOrders();
   const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(GRACE_PERIOD_MINUTES * 60);
   const [gracePeriodExpired, setGracePeriodExpired] = useState(false);
 
   useEffect(() => {
-    // Get order from sessionStorage
-    const orderData = sessionStorage.getItem('currentOrder');
-    if (!orderData) {
+    // Get order ID from sessionStorage
+    const orderIdStr = sessionStorage.getItem('currentOrderId');
+    if (!orderIdStr) {
       navigate('/');
       return;
     }
 
-    const parsedOrder = JSON.parse(orderData) as Order;
-    setOrder(parsedOrder);
-  }, [navigate]);
+    const fetchOrder = async () => {
+      try {
+        const orderId = parseInt(orderIdStr);
+        const fetchedOrder = await getOrderById(orderId);
+        if (fetchedOrder) {
+          setOrder(fetchedOrder);
+        } else {
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        navigate('/');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [navigate, getOrderById]);
 
   useEffect(() => {
     // Grace period countdown
@@ -59,14 +79,17 @@ const OrderConfirmation = () => {
     navigate('/');
   };
 
-  const handleCancelOrder = () => {
-    if (gracePeriodExpired) return;
+  const handleCancelOrder = async () => {
+    if (gracePeriodExpired || !order) return;
     
-    // Mock order cancellation
-    if (order) {
-      const cancelledOrder = { ...order, status: 'cancelled' as const };
-      sessionStorage.setItem('currentOrder', JSON.stringify(cancelledOrder));
+    setCancelling(true);
+    try {
+      const cancelledOrder = await cancelOrder(order.id);
       setOrder(cancelledOrder);
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -75,6 +98,17 @@ const OrderConfirmation = () => {
       navigate(`/order-status/${order.id}`);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Loading order...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -131,10 +165,15 @@ const OrderConfirmation = () => {
                     variant="outline"
                     size="sm"
                     onClick={handleCancelOrder}
+                    disabled={cancelling}
                     className="border-red-300 text-red-700 hover:bg-red-100"
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel Order
+                    {cancelling ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4 mr-2" />
+                    )}
+                    {cancelling ? 'Cancelling...' : 'Cancel Order'}
                   </Button>
                 </div>
               </div>
@@ -201,7 +240,7 @@ const OrderConfirmation = () => {
               </div>
               <div className="flex justify-between items-center text-lg font-semibold">
                 <span>Total:</span>
-                <span>${order.total.toFixed(2)}</span>
+                <span>${order.totalAmount.toFixed(2)}</span>
               </div>
             </div>
           </CardContent>
