@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db');
+const prisma = require('../db');
 
 const router = express.Router();
 
@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
     const { email, username, password } = req.body;
 
     // Check if user already exists
-    const existingUser = db.user.findFirst({
+    const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
           { email },
@@ -47,10 +47,12 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = db.user.create({
-      email,
-      username,
-      password: hashedPassword
+    const user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        password: hashedPassword
+      }
     });
 
     // Generate JWT token
@@ -88,7 +90,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Find user
-    const user = db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email }
     });
 

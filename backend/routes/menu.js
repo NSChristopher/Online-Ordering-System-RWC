@@ -1,11 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const prisma = require('../db');
 
 // Get all categories with items
 router.get('/categories', async (req, res) => {
   try {
-    const categories = db.menuCategory.findMany();
+    const categories = await prisma.menuCategory.findMany({
+      include: {
+        items: {
+          orderBy: [
+            { sortOrder: 'asc' },
+            { name: 'asc' }
+          ]
+        }
+      },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { name: 'asc' }
+      ]
+    });
     res.json(categories);
   } catch (error) {
     console.error('Get categories error:', error);
@@ -17,8 +30,16 @@ router.get('/categories', async (req, res) => {
 router.get('/categories/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const category = db.menuCategory.findUnique({
-      where: { id: parseInt(id) }
+    const category = await prisma.menuCategory.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        items: {
+          orderBy: [
+            { sortOrder: 'asc' },
+            { name: 'asc' }
+          ]
+        }
+      }
     });
 
     if (!category) {
@@ -41,8 +62,8 @@ router.post('/categories', async (req, res) => {
       return res.status(400).json({ error: 'Category name is required' });
     }
 
-    const category = db.menuCategory.create({
-      data: { name, sortOrder }
+    const category = await prisma.menuCategory.create({
+      data: { name, sortOrder: sortOrder || 0 }
     });
 
     res.status(201).json(category);
@@ -58,7 +79,7 @@ router.put('/categories/:id', async (req, res) => {
     const { id } = req.params;
     const { name, sortOrder } = req.body;
 
-    const existingCategory = db.menuCategory.findUnique({
+    const existingCategory = await prisma.menuCategory.findUnique({
       where: { id: parseInt(id) }
     });
 
@@ -66,7 +87,7 @@ router.put('/categories/:id', async (req, res) => {
       return res.status(404).json({ error: 'Category not found' });
     }
 
-    const updatedCategory = db.menuCategory.update({
+    const updatedCategory = await prisma.menuCategory.update({
       where: { id: parseInt(id) },
       data: { name, sortOrder }
     });
@@ -83,7 +104,7 @@ router.delete('/categories/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existingCategory = db.menuCategory.findUnique({
+    const existingCategory = await prisma.menuCategory.findUnique({
       where: { id: parseInt(id) }
     });
 
@@ -91,7 +112,7 @@ router.delete('/categories/:id', async (req, res) => {
       return res.status(404).json({ error: 'Category not found' });
     }
 
-    db.menuCategory.delete({
+    await prisma.menuCategory.delete({
       where: { id: parseInt(id) }
     });
 
@@ -105,7 +126,15 @@ router.delete('/categories/:id', async (req, res) => {
 // Get all items
 router.get('/items', async (req, res) => {
   try {
-    const items = db.menuItem.findMany();
+    const items = await prisma.menuItem.findMany({
+      include: {
+        category: true
+      },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { name: 'asc' }
+      ]
+    });
     res.json(items);
   } catch (error) {
     console.error('Get items error:', error);
@@ -117,8 +146,11 @@ router.get('/items', async (req, res) => {
 router.get('/items/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const item = db.menuItem.findUnique({
-      where: { id: parseInt(id) }
+    const item = await prisma.menuItem.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        category: true
+      }
     });
 
     if (!item) {
@@ -142,7 +174,7 @@ router.post('/items', async (req, res) => {
     }
 
     // Verify category exists
-    const category = db.menuCategory.findUnique({
+    const category = await prisma.menuCategory.findUnique({
       where: { id: parseInt(menuCategoryId) }
     });
 
@@ -150,7 +182,7 @@ router.post('/items', async (req, res) => {
       return res.status(400).json({ error: 'Category not found' });
     }
 
-    const item = db.menuItem.create({
+    const item = await prisma.menuItem.create({
       data: {
         menuCategoryId: parseInt(menuCategoryId),
         name,
@@ -158,7 +190,7 @@ router.post('/items', async (req, res) => {
         price: parseFloat(price),
         imageUrl,
         visible: visible !== false,
-        sortOrder
+        sortOrder: sortOrder || 0
       }
     });
 
@@ -175,7 +207,7 @@ router.put('/items/:id', async (req, res) => {
     const { id } = req.params;
     const { menuCategoryId, name, description, price, imageUrl, visible, sortOrder } = req.body;
 
-    const existingItem = db.menuItem.findUnique({
+    const existingItem = await prisma.menuItem.findUnique({
       where: { id: parseInt(id) }
     });
 
@@ -185,7 +217,7 @@ router.put('/items/:id', async (req, res) => {
 
     // If category is being changed, verify it exists
     if (menuCategoryId && menuCategoryId !== existingItem.menuCategoryId) {
-      const category = db.menuCategory.findUnique({
+      const category = await prisma.menuCategory.findUnique({
         where: { id: parseInt(menuCategoryId) }
       });
 
@@ -203,7 +235,7 @@ router.put('/items/:id', async (req, res) => {
     if (visible !== undefined) updateData.visible = visible;
     if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
 
-    const updatedItem = db.menuItem.update({
+    const updatedItem = await prisma.menuItem.update({
       where: { id: parseInt(id) },
       data: updateData
     });
@@ -220,7 +252,7 @@ router.delete('/items/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existingItem = db.menuItem.findUnique({
+    const existingItem = await prisma.menuItem.findUnique({
       where: { id: parseInt(id) }
     });
 
@@ -228,7 +260,7 @@ router.delete('/items/:id', async (req, res) => {
       return res.status(404).json({ error: 'Item not found' });
     }
 
-    db.menuItem.delete({
+    await prisma.menuItem.delete({
       where: { id: parseInt(id) }
     });
 

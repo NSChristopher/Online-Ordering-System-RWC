@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const prisma = require('../db');
 
 // Get all orders or filter by status
 router.get('/', async (req, res) => {
@@ -8,7 +8,19 @@ router.get('/', async (req, res) => {
     const { status } = req.query;
     
     const whereClause = status ? { status } : undefined;
-    const orders = db.order.findMany({ where: whereClause });
+    const orders = await prisma.order.findMany({
+      where: whereClause,
+      include: {
+        items: {
+          include: {
+            menuItem: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     
     res.json(orders);
   } catch (error) {
@@ -21,8 +33,15 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const order = db.order.findUnique({
-      where: { id: parseInt(id) }
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        items: {
+          include: {
+            menuItem: true
+          }
+        }
+      }
     });
 
     if (!order) {
@@ -59,7 +78,7 @@ router.post('/', async (req, res) => {
     const orderItems = [];
 
     for (const item of items) {
-      const menuItem = db.menuItem.findUnique({
+      const menuItem = await prisma.menuItem.findUnique({
         where: { id: parseInt(item.menuItemId) }
       });
 
@@ -79,7 +98,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const order = db.order.create({
+    const order = await prisma.order.create({
       data: {
         customerName,
         customerPhone,
@@ -90,7 +109,16 @@ router.post('/', async (req, res) => {
         totalAmount,
         paymentMethod: paymentMethod || 'cash',
         notes,
-        items: orderItems
+        items: {
+          create: orderItems
+        }
+      },
+      include: {
+        items: {
+          include: {
+            menuItem: true
+          }
+        }
       }
     });
 
@@ -116,7 +144,7 @@ router.patch('/:id/status', async (req, res) => {
       return res.status(400).json({ error: 'Invalid status value' });
     }
 
-    const existingOrder = db.order.findUnique({
+    const existingOrder = await prisma.order.findUnique({
       where: { id: parseInt(id) }
     });
 
@@ -124,9 +152,16 @@ router.patch('/:id/status', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const updatedOrder = db.order.update({
+    const updatedOrder = await prisma.order.update({
       where: { id: parseInt(id) },
-      data: { status }
+      data: { status },
+      include: {
+        items: {
+          include: {
+            menuItem: true
+          }
+        }
+      }
     });
 
     res.json(updatedOrder);
@@ -141,7 +176,7 @@ router.patch('/:id/cancel', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existingOrder = db.order.findUnique({
+    const existingOrder = await prisma.order.findUnique({
       where: { id: parseInt(id) }
     });
 
@@ -154,9 +189,16 @@ router.patch('/:id/cancel', async (req, res) => {
       return res.status(400).json({ error: 'Order cannot be cancelled at this stage' });
     }
 
-    const updatedOrder = db.order.update({
+    const updatedOrder = await prisma.order.update({
       where: { id: parseInt(id) },
-      data: { status: 'cancelled' }
+      data: { status: 'cancelled' },
+      include: {
+        items: {
+          include: {
+            menuItem: true
+          }
+        }
+      }
     });
 
     res.json(updatedOrder);

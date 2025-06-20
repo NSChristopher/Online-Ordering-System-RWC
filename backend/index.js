@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const db = require("./db");
+const prisma = require("./db");
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -48,7 +48,7 @@ app.listen(PORT, () => {
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  db.$disconnect();
+  await prisma.$disconnect();
   process.exit(0);
 });
 
