@@ -5,12 +5,117 @@ const path = require('path');
 // Use existing SQLite database
 const db = new Database(path.join(__dirname, 'prisma', 'dev.db'));
 
+// Initialize tables if they don't exist
+function initializeDatabase() {
+  try {
+    // Check if tables exist
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+    const tableNames = tables.map(t => t.name);
+    
+    if (!tableNames.includes('User') || !tableNames.includes('MenuCategory')) {
+      console.log('Initializing database tables...');
+      
+      // Create all tables
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS User (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE NOT NULL,
+          username TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS Post (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          content TEXT,
+          published INTEGER DEFAULT 0,
+          authorId INTEGER NOT NULL,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (authorId) REFERENCES User(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS BusinessInfo (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          address TEXT,
+          phone TEXT,
+          hours TEXT,
+          logoUrl TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS MenuCategory (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          sortOrder INTEGER DEFAULT 0,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS MenuItem (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          menuCategoryId INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          description TEXT,
+          price REAL NOT NULL,
+          imageUrl TEXT,
+          visible INTEGER DEFAULT 1,
+          sortOrder INTEGER DEFAULT 0,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (menuCategoryId) REFERENCES MenuCategory(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS "Order" (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          customerName TEXT NOT NULL,
+          customerPhone TEXT,
+          customerEmail TEXT,
+          deliveryAddress TEXT,
+          orderType TEXT DEFAULT 'to-go',
+          status TEXT DEFAULT 'pending',
+          totalAmount REAL NOT NULL,
+          paymentMethod TEXT DEFAULT 'cash',
+          notes TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS OrderItem (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          orderId INTEGER NOT NULL,
+          menuItemId INTEGER NOT NULL,
+          quantity INTEGER NOT NULL,
+          priceAtOrder REAL NOT NULL,
+          itemNameAtOrder TEXT NOT NULL,
+          notes TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (orderId) REFERENCES "Order"(id) ON DELETE CASCADE,
+          FOREIGN KEY (menuItemId) REFERENCES MenuItem(id)
+        );
+      `);
+      
+      console.log('Database initialized successfully');
+    }
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+}
+
+// Initialize database on startup
+initializeDatabase();
+
 // Create a mock PrismaClient that uses the existing database
 class MockPrismaClient {
   constructor() {
     this.user = {
       create: async ({ data }) => {
-        const stmt = db.prepare('INSERT INTO User (email, username, password) VALUES (?, ?, ?)');
+        const stmt = db.prepare('INSERT INTO User (email, username, password, createdAt, updatedAt) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
         const result = stmt.run(data.email, data.username, data.password);
         return { 
           id: result.lastInsertRowid, 
@@ -50,7 +155,7 @@ class MockPrismaClient {
         return db.prepare('SELECT * FROM BusinessInfo LIMIT 1').get();
       },
       create: async ({ data }) => {
-        const stmt = db.prepare('INSERT INTO BusinessInfo (name, address, phone, hours, logoUrl) VALUES (?, ?, ?, ?, ?)');
+        const stmt = db.prepare('INSERT INTO BusinessInfo (name, address, phone, hours, logoUrl, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
         const result = stmt.run(data.name, data.address, data.phone, data.hours, data.logoUrl);
         return { 
           id: result.lastInsertRowid, 
@@ -86,7 +191,7 @@ class MockPrismaClient {
         return category;
       },
       create: async ({ data }) => {
-        const stmt = db.prepare('INSERT INTO MenuCategory (name, sortOrder) VALUES (?, ?)');
+        const stmt = db.prepare('INSERT INTO MenuCategory (name, sortOrder, createdAt, updatedAt) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
         const result = stmt.run(data.name, data.sortOrder || 0);
         return { 
           id: result.lastInsertRowid, 
@@ -135,7 +240,7 @@ class MockPrismaClient {
         };
       },
       create: async ({ data }) => {
-        const stmt = db.prepare('INSERT INTO MenuItem (menuCategoryId, name, description, price, imageUrl, visible, sortOrder) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        const stmt = db.prepare('INSERT INTO MenuItem (menuCategoryId, name, description, price, imageUrl, visible, sortOrder, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
         const result = stmt.run(
           data.menuCategoryId,
           data.name,
@@ -209,7 +314,7 @@ class MockPrismaClient {
         return order;
       },
       create: async ({ data, include }) => {
-        const stmt = db.prepare('INSERT INTO "Order" (customerName, customerPhone, customerEmail, deliveryAddress, orderType, status, totalAmount, paymentMethod, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        const stmt = db.prepare('INSERT INTO "Order" (customerName, customerPhone, customerEmail, deliveryAddress, orderType, status, totalAmount, paymentMethod, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
         const result = stmt.run(
           data.customerName,
           data.customerPhone,
@@ -226,7 +331,7 @@ class MockPrismaClient {
         
         // Create order items if provided
         if (data.items && data.items.create) {
-          const itemStmt = db.prepare('INSERT INTO OrderItem (orderId, menuItemId, quantity, priceAtOrder, itemNameAtOrder, notes) VALUES (?, ?, ?, ?, ?, ?)');
+          const itemStmt = db.prepare('INSERT INTO OrderItem (orderId, menuItemId, quantity, priceAtOrder, itemNameAtOrder, notes, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
           for (const item of data.items.create) {
             itemStmt.run(orderId, item.menuItemId, item.quantity, item.priceAtOrder, item.itemNameAtOrder, item.notes);
           }
@@ -301,7 +406,7 @@ class MockPrismaClient {
         };
       },
       create: async ({ data, include }) => {
-        const stmt = db.prepare('INSERT INTO Post (title, content, published, authorId) VALUES (?, ?, ?, ?)');
+        const stmt = db.prepare('INSERT INTO Post (title, content, published, authorId, createdAt, updatedAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
         const result = stmt.run(data.title, data.content, data.published ? 1 : 0, data.authorId);
         
         const post = db.prepare('SELECT p.*, u.username, u.email FROM Post p JOIN User u ON p.authorId = u.id WHERE p.id = ?').get(result.lastInsertRowid);
