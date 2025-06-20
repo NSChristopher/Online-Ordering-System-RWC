@@ -4,43 +4,69 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/hooks/useCart';
-import { mockBusinessInfo, mockMenuCategories, mockMenuItems, getItemsByCategory } from '@/data/mockData';
+import { useBusinessInfo } from '@/hooks/useBusinessInfo';
+import { useMenu } from '@/hooks/useMenu';
 import { MenuItem } from '@/types';
-import { Search, Plus, ShoppingCart, Clock, MapPin, Phone } from 'lucide-react';
+import { Search, Plus, ShoppingCart, Clock, MapPin, Phone, Loader2 } from 'lucide-react';
 import MenuItemModal from '@/components/MenuItemModal';
 import CartDrawer from '@/components/CartDrawer';
 
 const Menu = () => {
   const { cart, addItem } = useCart();
+  const { businessInfo, loading: businessLoading } = useBusinessInfo();
+  const { categories, items, loading: menuLoading, getItemsByCategory } = useMenu();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const loading = businessLoading || menuLoading;
 
   // Get business hours status
   const isOpen = true; // Mock - always open for demo
 
   // Filter items based on category and search
   const filteredItems = useMemo(() => {
-    let items = selectedCategory 
+    let filteredItems = selectedCategory 
       ? getItemsByCategory(selectedCategory)
-      : mockMenuItems.filter(item => item.visible);
+      : items.filter(item => item.visible);
 
     if (searchQuery) {
-      items = items.filter(item =>
+      filteredItems = filteredItems.filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    return items;
-  }, [selectedCategory, searchQuery]);
+    return filteredItems;
+  }, [selectedCategory, searchQuery, items, getItemsByCategory]);
 
   const handleAddToCart = (item: MenuItem, quantity = 1) => {
     addItem(item, quantity);
   };
 
   const cartItemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!businessInfo) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500">Unable to load business information</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -49,7 +75,7 @@ const Menu = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{mockBusinessInfo.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{businessInfo.name}</h1>
               <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-1" />
@@ -59,14 +85,18 @@ const Menu = () => {
                     {isOpen ? 'Open' : 'Closed'}
                   </span>
                 </div>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">{mockBusinessInfo.address}</span>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-1" />
-                  <span>{mockBusinessInfo.phone}</span>
-                </div>
+                {businessInfo.address && (
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">{businessInfo.address}</span>
+                  </div>
+                )}
+                {businessInfo.phone && (
+                  <div className="flex items-center">
+                    <Phone className="h-4 w-4 mr-1" />
+                    <span>{businessInfo.phone}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -85,7 +115,7 @@ const Menu = () => {
             >
               All Items
             </Button>
-            {mockMenuCategories.map((category) => (
+            {categories.map((category) => (
               <Button
                 key={category.id}
                 variant={selectedCategory === category.id ? "default" : "outline"}

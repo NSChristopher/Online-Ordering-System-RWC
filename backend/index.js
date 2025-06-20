@@ -1,11 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const db = require("./db");
+const prisma = require("./db");
 
 // Import routes
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
+const businessRoutes = require("./routes/business");
+const menuRoutes = require("./routes/menu");
+const orderRoutes = require("./routes/orders");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,7 +16,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
     credentials: true,
   })
 );
@@ -23,6 +26,9 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/business", businessRoutes);
+app.use("/api/menu", menuRoutes);
+app.use("/api/orders", orderRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -42,7 +48,7 @@ app.listen(PORT, () => {
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  db.$disconnect();
+  await prisma.$disconnect();
   process.exit(0);
 });
 

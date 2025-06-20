@@ -53,10 +53,9 @@ A complete, production-ready full-stack template featuring React 18, Express.js,
 
    ```bash
    cd backend
-   # The application will automatically create SQLite database tables on first run
-   # Optional: If you have Prisma working, you can run:
-   # npx prisma generate
-   # npx prisma db push
+   npx prisma generate
+   npx prisma db push
+   npx run prisma/seed.js
    cd ..
    ```
 

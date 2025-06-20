@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { BusinessInfo, UpdateBusinessInfoData } from '@/types';
+import { BusinessInfo } from '@/types';
 import api from '@/lib/api';
 
-export const useBusiness = () => {
+export const useBusinessInfo = () => {
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,20 +15,6 @@ export const useBusiness = () => {
     } catch (error) {
       console.error('Error fetching business info:', error);
       toast.error('Failed to load business information');
-    }
-  };
-
-  // Update business info
-  const updateBusinessInfo = async (data: UpdateBusinessInfoData) => {
-    try {
-      const response = await api.put('/business', data);
-      setBusinessInfo(response.data);
-      toast.success('Business information updated successfully');
-      return response.data;
-    } catch (error) {
-      console.error('Error updating business info:', error);
-      toast.error('Failed to update business information');
-      throw error;
     }
   };
 
@@ -49,7 +35,6 @@ export const useBusiness = () => {
   return {
     businessInfo,
     loading,
-    updateBusinessInfo,
     refreshData: fetchBusinessInfo,
   };
 };
