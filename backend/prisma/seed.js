@@ -2,6 +2,21 @@
 const prisma = require('../db-mock');
 
 async function main() {
+  // Clear existing data to prevent duplicates
+  console.log('Clearing existing seed data...');
+  
+  // Note: In a real Prisma setup, we'd use deleteMany, but our mock client uses direct SQL
+  const Database = require('better-sqlite3');
+  const path = require('path');
+  const db = new Database(path.join(__dirname, 'dev.db'));
+  
+  // Clear existing data
+  db.prepare('DELETE FROM MenuItem').run();
+  db.prepare('DELETE FROM MenuCategory').run(); 
+  db.prepare('DELETE FROM BusinessInfo').run();
+  
+  db.close();
+
   // Create a business with realistic information
   const business = await prisma.businessInfo.create({
     data: {
