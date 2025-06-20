@@ -52,10 +52,11 @@ A complete, production-ready full-stack template featuring React 18, Express.js,
 3. **Initialize the database:**
 
    ```bash
-cd backend
-npx prisma generate
-npx prisma db push
-cd ..
+   cd backend
+   npx prisma generate
+   npx prisma db push
+   npx run prisma/seed.js
+   cd ..
    ```
 
 4. **Start development servers:**

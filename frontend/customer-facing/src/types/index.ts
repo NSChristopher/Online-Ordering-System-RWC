@@ -69,11 +69,18 @@ export interface CartItem {
 
 export interface Cart {
   items: CartItem[];
-  orderType: 'delivery' | 'to-go';
+  orderType: "delivery" | "to-go";
   total: number;
 }
 
-export type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'ready' | 'completed' | 'cancelled';
+export type OrderStatus =
+  | "pending"
+  | "accepted"
+  | "preparing"
+  | "rejected"
+  | "ready"
+  | "completed"
+  | "cancelled";
 
 export interface Order {
   id: number;
@@ -81,10 +88,10 @@ export interface Order {
   customerPhone: string;
   customerEmail?: string;
   deliveryAddress?: string;
-  orderType: 'to-go' | 'delivery';
+  orderType: "to-go" | "delivery";
   status: OrderStatus;
   totalAmount: number;
-  paymentMethod: 'cash' | 'card';
+  paymentMethod: "cash" | "card";
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -106,8 +113,8 @@ export interface CreateOrderData {
   customerPhone: string;
   customerEmail?: string;
   deliveryAddress?: string;
-  orderType: 'to-go' | 'delivery';
-  paymentMethod: 'cash' | 'card';
+  orderType: "to-go" | "delivery";
+  paymentMethod: "cash" | "card";
   notes?: string;
   items: {
     menuItemId: number;

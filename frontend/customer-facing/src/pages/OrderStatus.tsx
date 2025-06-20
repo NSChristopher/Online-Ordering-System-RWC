@@ -1,21 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Order, OrderStatus } from '@/types';
-import { useOrders } from '@/hooks/useOrders';
-import { 
-  CheckCircle, 
-  Clock, 
-  ChefHat, 
-  Package, 
-  Truck, 
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Order, OrderStatus } from "@/types";
+import { useOrders } from "@/hooks/useOrders";
+import {
+  CheckCircle,
+  Clock,
+  ChefHat,
+  Package,
+  Truck,
   Store,
   ArrowLeft,
   Phone,
   HelpCircle,
-  Loader2
-} from 'lucide-react';
+  Loader2,
+} from "lucide-react";
 
 const OrderStatusPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -23,12 +23,12 @@ const OrderStatusPage = () => {
   const { getOrderById } = useOrders();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentStatus, setCurrentStatus] = useState<OrderStatus>('pending');
-  const [estimatedTime, setEstimatedTime] = useState<string>('');
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>("pending");
+  const [estimatedTime, setEstimatedTime] = useState<string>("");
 
   useEffect(() => {
     if (!orderId) {
-      navigate('/');
+      navigate("/");
       return;
     }
 
@@ -38,92 +38,105 @@ const OrderStatusPage = () => {
         if (fetchedOrder) {
           setOrder(fetchedOrder);
           setCurrentStatus(fetchedOrder.status);
-          
+
           // Set estimated time based on order type and items
-          const itemCount = fetchedOrder.items.reduce((sum, item) => sum + item.quantity, 0);
-          const baseTime = fetchedOrder.orderType === 'delivery' ? 45 : 25;
+          const itemCount = fetchedOrder.items.reduce(
+            (sum, item) => sum + item.quantity,
+            0
+          );
+          const baseTime = fetchedOrder.orderType === "delivery" ? 45 : 25;
           const additionalTime = Math.max(0, (itemCount - 3) * 5);
-          setEstimatedTime(`${baseTime + additionalTime}-${baseTime + additionalTime + 10} minutes`);
+          setEstimatedTime(
+            `${baseTime + additionalTime}-${
+              baseTime + additionalTime + 10
+            } minutes`
+          );
         } else {
-          navigate('/');
+          navigate("/");
         }
       } catch (error) {
-        console.error('Error fetching order:', error);
-        navigate('/');
+        console.error("Error fetching order:", error);
+        navigate("/");
       } finally {
         setLoading(false);
       }
     };
 
+    fetchOrder(); // <-- This line ensures the order is fetched and loading is updated
   }, [orderId, navigate, getOrderById]);
 
   const getStatusInfo = (status: OrderStatus) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return {
-          title: 'Order Received',
-          description: 'We\'ve received your order and are reviewing it.',
+          title: "Order Received",
+          description: "We've received your order and are reviewing it.",
           icon: CheckCircle,
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-100'
+          color: "text-blue-600",
+          bgColor: "bg-blue-100",
         };
-      case 'accepted':
+      case "accepted":
         return {
-          title: 'Order Confirmed',
-          description: 'Your order has been confirmed and we\'re getting started.',
+          title: "Order Confirmed",
+          description:
+            "Your order has been confirmed and we're getting started.",
           icon: CheckCircle,
-          color: 'text-green-600',
-          bgColor: 'bg-green-100'
+          color: "text-green-600",
+          bgColor: "bg-green-100",
         };
-      case 'preparing':
+      case "preparing":
         return {
-          title: 'Preparing',
-          description: 'Our chefs are preparing your delicious meal.',
+          title: "Preparing",
+          description: "Our chefs are preparing your delicious meal.",
           icon: ChefHat,
-          color: 'text-orange-600',
-          bgColor: 'bg-orange-100'
+          color: "text-orange-600",
+          bgColor: "bg-orange-100",
         };
-      case 'ready':
+      case "ready":
         return {
-          title: order?.orderType === 'delivery' ? 'Out for Delivery' : 'Ready for Pickup',
-          description: order?.orderType === 'delivery' 
-            ? 'Your order is on the way!' 
-            : 'Your order is ready for pickup.',
-          icon: order?.orderType === 'delivery' ? Truck : Package,
-          color: 'text-purple-600',
-          bgColor: 'bg-purple-100'
+          title:
+            order?.orderType === "delivery"
+              ? "Out for Delivery"
+              : "Ready for Pickup",
+          description:
+            order?.orderType === "delivery"
+              ? "Your order is on the way!"
+              : "Your order is ready for pickup.",
+          icon: order?.orderType === "delivery" ? Truck : Package,
+          color: "text-purple-600",
+          bgColor: "bg-purple-100",
         };
-      case 'completed':
+      case "completed":
         return {
-          title: 'Order Complete',
-          description: 'Your order has been delivered/picked up. Enjoy!',
+          title: "Order Complete",
+          description: "Your order has been delivered/picked up. Enjoy!",
           icon: CheckCircle,
-          color: 'text-green-600',
-          bgColor: 'bg-green-100'
+          color: "text-green-600",
+          bgColor: "bg-green-100",
         };
-      case 'cancelled':
+      case "cancelled":
         return {
-          title: 'Order Cancelled',
-          description: 'Your order has been cancelled.',
+          title: "Order Cancelled",
+          description: "Your order has been cancelled.",
           icon: CheckCircle,
-          color: 'text-red-600',
-          bgColor: 'bg-red-100'
+          color: "text-red-600",
+          bgColor: "bg-red-100",
         };
-      case 'rejected':
+      case "rejected":
         return {
-          title: 'Order Rejected',
-          description: 'Sorry, we couldn\'t fulfill your order at this time.',
+          title: "Order Rejected",
+          description: "Sorry, we couldn't fulfill your order at this time.",
           icon: CheckCircle,
-          color: 'text-red-600',
-          bgColor: 'bg-red-100'
+          color: "text-red-600",
+          bgColor: "bg-red-100",
         };
       default:
         return {
-          title: 'Processing',
-          description: 'We\'re working on your order.',
+          title: "Processing",
+          description: "We're working on your order.",
           icon: Clock,
-          color: 'text-gray-600',
-          bgColor: 'bg-gray-100'
+          color: "text-gray-600",
+          bgColor: "bg-gray-100",
         };
     }
   };
@@ -154,18 +167,21 @@ const OrderStatusPage = () => {
 
   const getProgressSteps = () => {
     const steps = [
-      { key: 'pending', label: 'Received' },
-      { key: 'accepted', label: 'Confirmed' },
-      { key: 'ready', label: order?.orderType === 'delivery' ? 'Delivering' : 'Ready' }
+      { key: "pending", label: "Received" },
+      { key: "accepted", label: "Confirmed" },
+      {
+        key: "ready",
+        label: order?.orderType === "delivery" ? "Delivering" : "Ready",
+      },
     ];
 
-    const statusOrder = ['pending', 'accepted', 'ready', 'completed'];
+    const statusOrder = ["pending", "accepted", "ready", "completed"];
     const currentIndex = statusOrder.indexOf(currentStatus);
 
     return steps.map((step, index) => ({
       ...step,
       completed: index <= currentIndex,
-      active: index === currentIndex
+      active: index === currentIndex,
     }));
   };
 
@@ -188,7 +204,7 @@ const OrderStatusPage = () => {
           <div className="flex items-center py-6">
             <Button
               variant="ghost"
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               className="mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -204,16 +220,16 @@ const OrderStatusPage = () => {
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className={`w-16 h-16 ${statusInfo.bgColor} rounded-full flex items-center justify-center mx-auto mb-4`}>
+              <div
+                className={`w-16 h-16 ${statusInfo.bgColor} rounded-full flex items-center justify-center mx-auto mb-4`}
+              >
                 <StatusIcon className={`h-8 w-8 ${statusInfo.color}`} />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 {statusInfo.title}
               </h2>
-              <p className="text-gray-600 mb-4">
-                {statusInfo.description}
-              </p>
-              {currentStatus === 'preparing' && (
+              <p className="text-gray-600 mb-4">{statusInfo.description}</p>
+              {currentStatus === "preparing" && (
                 <p className="text-sm font-medium text-gray-900">
                   Estimated time: {estimatedTime}
                 </p>
@@ -223,7 +239,7 @@ const OrderStatusPage = () => {
         </Card>
 
         {/* Progress Steps */}
-        {currentStatus !== 'cancelled' && currentStatus !== 'rejected' && (
+        {currentStatus !== "cancelled" && currentStatus !== "rejected" && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Order Progress</CardTitle>
@@ -231,14 +247,17 @@ const OrderStatusPage = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 {getProgressSteps().map((step, index) => (
-                  <div key={step.key} className="flex-1 flex flex-col items-center relative">
+                  <div
+                    key={step.key}
+                    className="flex-1 flex flex-col items-center relative"
+                  >
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         step.completed
-                          ? 'bg-green-500 text-white'
+                          ? "bg-green-500 text-white"
                           : step.active
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-400'
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200 text-gray-400"
                       }`}
                     >
                       {step.completed ? (
@@ -247,17 +266,21 @@ const OrderStatusPage = () => {
                         <span>{index + 1}</span>
                       )}
                     </div>
-                    <p className={`text-xs mt-2 text-center ${
-                      step.completed || step.active ? 'text-gray-900 font-medium' : 'text-gray-500'
-                    }`}>
+                    <p
+                      className={`text-xs mt-2 text-center ${
+                        step.completed || step.active
+                          ? "text-gray-900 font-medium"
+                          : "text-gray-500"
+                      }`}
+                    >
                       {step.label}
                     </p>
                     {index < getProgressSteps().length - 1 && (
                       <div
                         className={`absolute top-4 left-1/2 w-full h-0.5 ${
-                          step.completed ? 'bg-green-500' : 'bg-gray-200'
+                          step.completed ? "bg-green-500" : "bg-gray-200"
                         }`}
-                        style={{ transform: 'translateX(50%)' }}
+                        style={{ transform: "translateX(50%)" }}
                       />
                     )}
                   </div>
@@ -273,13 +296,13 @@ const OrderStatusPage = () => {
             <CardTitle className="flex items-center justify-between">
               Order #{order.id}
               <div className="flex items-center space-x-2">
-                {order.orderType === 'delivery' ? (
+                {order.orderType === "delivery" ? (
                   <Truck className="h-5 w-5 text-blue-600" />
                 ) : (
                   <Store className="h-5 w-5 text-green-600" />
                 )}
                 <span className="text-sm font-normal text-gray-600">
-                  {order.orderType === 'delivery' ? 'Delivery' : 'Pickup'}
+                  {order.orderType === "delivery" ? "Delivery" : "Pickup"}
                 </span>
               </div>
             </CardTitle>
@@ -295,8 +318,12 @@ const OrderStatusPage = () => {
               </div>
               {order.deliveryAddress && (
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Delivery Address</h4>
-                  <p className="text-sm text-gray-600">{order.deliveryAddress}</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">
+                    Delivery Address
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {order.deliveryAddress}
+                  </p>
                 </div>
               )}
             </div>
@@ -305,10 +332,17 @@ const OrderStatusPage = () => {
               <h4 className="font-semibold text-gray-900 mb-2">Items</h4>
               <div className="space-y-2">
                 {order.items.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center text-sm">
+                  <div
+                    key={index}
+                    className="flex justify-between items-center text-sm"
+                  >
                     <div>
-                      <span className="font-medium">{item.itemNameAtOrder}</span>
-                      <span className="text-gray-500 ml-2">× {item.quantity}</span>
+                      <span className="font-medium">
+                        {item.itemNameAtOrder}
+                      </span>
+                      <span className="text-gray-500 ml-2">
+                        × {item.quantity}
+                      </span>
                     </div>
                     <span className="font-medium">
                       ${(item.priceAtOrder * item.quantity).toFixed(2)}
@@ -333,7 +367,8 @@ const OrderStatusPage = () => {
               <HelpCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
               <h3 className="font-semibold text-gray-900 mb-2">Need Help?</h3>
               <p className="text-sm text-gray-600 mb-4">
-                If you have any questions about your order, feel free to contact us.
+                If you have any questions about your order, feel free to contact
+                us.
               </p>
               <Button variant="outline" size="sm">
                 <Phone className="h-4 w-4 mr-2" />
