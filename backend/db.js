@@ -186,8 +186,8 @@ const findCategoryById = db.prepare(`
 `);
 
 const createCategory = db.prepare(`
-  INSERT INTO MenuCategory (name, sortOrder) 
-  VALUES (?, ?)
+  INSERT INTO MenuCategory (name, sortOrder, createdAt, updatedAt) 
+  VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 `);
 
 const updateCategory = db.prepare(`
@@ -220,8 +220,8 @@ const findItemsByCategory = db.prepare(`
 `);
 
 const createItem = db.prepare(`
-  INSERT INTO MenuItem (menuCategoryId, name, description, price, imageUrl, visible, sortOrder) 
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO MenuItem (menuCategoryId, name, description, price, imageUrl, visible, sortOrder, createdAt, updatedAt) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 `);
 
 const updateItem = db.prepare(`
@@ -248,8 +248,8 @@ const findOrdersByStatus = db.prepare(`
 `);
 
 const createOrder = db.prepare(`
-  INSERT INTO "Order" (customerName, customerPhone, customerEmail, deliveryAddress, orderType, status, totalAmount, paymentMethod, notes) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO "Order" (customerName, customerPhone, customerEmail, deliveryAddress, orderType, status, totalAmount, paymentMethod, notes, createdAt, updatedAt) 
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 `);
 
 const updateOrderStatus = db.prepare(`
@@ -267,8 +267,8 @@ const findOrderItems = db.prepare(`
 `);
 
 const createOrderItem = db.prepare(`
-  INSERT INTO OrderItem (orderId, menuItemId, quantity, priceAtOrder, itemNameAtOrder, notes) 
-  VALUES (?, ?, ?, ?, ?, ?)
+  INSERT INTO OrderItem (orderId, menuItemId, quantity, priceAtOrder, itemNameAtOrder, notes, createdAt, updatedAt) 
+  VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 `);
 
 module.exports = {
